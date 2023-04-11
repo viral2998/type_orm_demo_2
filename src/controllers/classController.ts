@@ -198,15 +198,33 @@ const timeFrame = (req: Request, res: CustomResponse): any => {
 
 const studentList = async (req: Request, res: CustomResponse) => {
   //Pagination logic
-  let { page, per_page } = req.body;
+  let { page, per_page , age} = req.body;
   if (page == 0) page = 1;
   page = page - 1;
   let offset: number = page * per_page;
+  let  studetns :Array<any> = []
 
-  const studetns = await AppDataSource.createQueryBuilder(User, "user")
-    .limit(per_page)
-    .offset(offset)
-    .getMany();
+  if(age){
+    // Using subqueries
+  studetns = await AppDataSource
+.getRepository(User)
+.createQueryBuilder("user")
+.where((qb) => {
+    const subQuery = qb
+        .subQuery()
+        .select('AVG(age)')
+        .from(User, 'user') 
+        .getQuery()
+    return "user.age > " + subQuery
+}).getMany()
+
+}else{
+  studetns = await AppDataSource.createQueryBuilder(User, "user")
+  .limit(per_page)
+  .offset(offset)
+  .getMany();
+} 
+    
 
   return res.status(200).send({ studetns });
 };

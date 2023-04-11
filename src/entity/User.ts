@@ -40,7 +40,7 @@ export class User extends DbEntity {
   @Column()
   email: string;
 
-  @Column()
+  @Column({select : false})
   password: string;
 
   @Column({
@@ -77,4 +77,8 @@ export class User extends DbEntity {
   )
   @JoinColumn({ name: "class_id" })
   studentClass: ClassRoom;
+ 
+@Column({default : 18})
+ age : number
 }
+  
