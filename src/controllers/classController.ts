@@ -3,7 +3,7 @@ import { AppDataSource } from "../data-source";
 import { ClassRoom } from "../entity/Class";
 import { User } from "../entity/User";
 import { CustomResponse } from "../entity/CustomResponse";
-import *as moment from "moment";
+import * as moment from "moment";
 
 const userRepository = AppDataSource.getRepository(User);
 const classRoomRepository = AppDataSource.getRepository(ClassRoom);
@@ -86,9 +86,9 @@ const classList = async (
     //        name : "class1"
     //     }
 
-    // }) 
+    // })
 
-    return res.json({ data: classessList }); 
+    return res.json({ data: classessList });
   } catch (error) {
     throw new Error(error);
   }
@@ -136,61 +136,80 @@ const classessListQueryBuilder = async (
       "teacher",
       "teacher.user_role = :user_role",
       { user_role: "teacher" }
-    ).leftJoinAndSelect("classroom.students", "studnet")
-    .getMany(); 
-    
-    // const students = await  AppDataSource.createQueryBuilder(ClassRoom,"classroom")
-    // .leftJoinAndSelect(User, "students", "students.class_id = classroom.id")
-    // .getMany()
-    
-    
-    //has many relation 
-    const students = await AppDataSource.createQueryBuilder(ClassRoom ,"classroom")
-    .leftJoinAndSelect("classroom.students", "studnet").getMany()
-  
-     return res.status(200).json(classes)
+    )
+    .leftJoinAndSelect("classroom.students", "studnet")
+    .where("studnet.is_active =:is_active", { is_active: "1" })
+    .getMany();
+
+  // const students = await  AppDataSource.createQueryBuilder(ClassRoom,"classroom")
+  // .leftJoinAndSelect(User, "students", "students.class_id = classroom.id")
+  // .getMany()
+
+  //has many relation
+  const students = await AppDataSource.createQueryBuilder(
+    ClassRoom,
+    "classroom"
+  )
+    .leftJoinAndSelect("classroom.students", "studnet")
+    .getMany();
+
+  return res.status(200).json(classes);
 };
 
 const timeFrame = (req: Request, res: CustomResponse): any => {
   let { start_time, end_time, slot } = req.body;
- 
-  //convert date to momnet 
+
+  //convert date to momnet
   const startDate = moment(start_time);
-  const endDate = moment(end_time)   
-    
-   //Get different from two time
-    const minutesDiff = endDate.diff(startDate, 'minutes') 
-    
-   //  console.log("nnn ", nnn);
+  const endDate = moment(end_time);
+
+  //Get different from two time
+  const minutesDiff = endDate.diff(startDate, "minutes");
+
+  //  console.log("nnn ", nnn);
   //  var minutesDiff : any= moment.utc(moment(endDate, "HH:mm:ss").diff(moment(startDate, "HH:mm:ss"))).format("mm")
-  // const hoursDiff: number = endDate.minute() - startDate.minute();   
+  // const hoursDiff: number = endDate.minute() - startDate.minute();
 
   //get frame
-  let frmae: number = (minutesDiff) / slot;
+  let frmae: number = minutesDiff / slot;
 
   //set updated data to
   let result: Array<object> = [];
   let newSatrtDate: any;
-  let newEndDate: any; 
-   
+  let newEndDate: any;
+
   //if new start date is not for the first time set it set first start date to newDate
-  if (!newSatrtDate) newSatrtDate =  moment(start_time);   
+  if (!newSatrtDate) newSatrtDate = moment(start_time);
 
   for (let index = 1; index <= slot; index++) {
-     newEndDate = moment(startDate.add(frmae, 'minutes'));    
+    newEndDate = moment(startDate.add(frmae, "minutes"));
     let object: object = {
       name: "slot" + index,
-      startTime: moment(newSatrtDate).format("YY-MM-DD HH:mm:ss") ,
-      endTime: moment(newEndDate ).format("YY-MM-DD HH:mm:ss") ,
-    };  
+      startTime: moment(newSatrtDate).format("YY-MM-DD HH:mm:ss"),
+      endTime: moment(newEndDate).format("YY-MM-DD HH:mm:ss"),
+    };
     //Assign end date to start date
-    newSatrtDate =  newEndDate;
+    newSatrtDate = newEndDate;
     result.push(object);
-  } 
- 
- return res.status(200).json({data :result});
+  }
 
-}; 
+  return res.status(200).json({ data: result });
+};
+
+const studentList = async (req: Request, res: CustomResponse) => {
+  //Pagination logic
+  let { page, per_page } = req.body;
+  if (page == 0) page = 1;
+  page = page - 1;
+  let offset: number = page * per_page;
+
+  const studetns = await AppDataSource.createQueryBuilder(User, "user")
+    .limit(per_page)
+    .offset(offset)
+    .getMany();
+
+  return res.status(200).send({ studetns });
+};
 
 export default {
   addClass,
@@ -198,4 +217,5 @@ export default {
   classessListQueryBuilder,
   deleteClass,
   timeFrame,
+  studentList,
 };

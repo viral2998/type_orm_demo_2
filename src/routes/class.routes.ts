@@ -9,6 +9,7 @@ router.post(
   classController.classessListQueryBuilder
 );
 router.post("/delete-class-room", classController.deleteClass);
+router.post("/student-list" , classController.studentList)
 router.post("/time-frame", classController.timeFrame);
 
 export default router;
